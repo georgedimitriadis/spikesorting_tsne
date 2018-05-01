@@ -6,7 +6,6 @@ import pyculib.sorting as sorting
 import numba
 from numba import float32, guvectorize
 import math
-from timeit import default_timer as timer
 from . import stopwatch as sw
 
 THREADS_PER_BLOCK = 32
