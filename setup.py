@@ -8,4 +8,15 @@ setup(name='spikesorting_tsne',
       author_email='gdimitri@hotmail.com',
       license='MIT',
       packages=['spikesorting_tsne'],
+      classifiers=[
+        'Development Status :: 5 - Production/Stable',
+        'Intended Audience :: Science/Research',
+        'Operating System :: Microsoft :: Windows',
+        'Operating System :: POSIX :: Linux',
+        'Topic :: Scientific/Engineering :: Visualization',
+        'License :: OSI Approved :: MIT License',
+
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+    ],
       zip_safe=False)
