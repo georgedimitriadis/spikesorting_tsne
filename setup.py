@@ -19,4 +19,12 @@ setup(name='spikesorting_tsne',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
     ],
-      zip_safe=False)
+    project_urls={
+        'Documentation': 'https://georgedimitriadis.github.io/spikesorting_tsne/',
+        'Python code repository': 'https://github.com/georgedimitriadis/spikesorting_tsne',
+        'C++ code repository': 'https://github.com/georgedimitriadis/spikesorting_tsne_bhpart',
+    },
+    python_requires='>=3.5',
+    zip_safe=False)
+
+
