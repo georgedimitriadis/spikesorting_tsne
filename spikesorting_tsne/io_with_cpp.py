@@ -18,7 +18,7 @@ def find_exe_file():
     :rtype: string
     """
     exe_dir = 'bin'
-    exe_file = 'Barnes_Hut'
+    exe_file = 'Barnes_Hut.out'
     if system() == 'Windows':
         exe_dir = 'Scripts'
         exe_file = 'Barnes_Hut.exe'
