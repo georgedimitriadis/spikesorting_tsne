@@ -27,3 +27,6 @@ For a description of the parameters of the t-SNE algorithm see the van der Maate
 This t-SNE implementation is significantly improved in speed and input size compared to the standard C++ code or to the scipy implementation. It can operate on datasets of more than 1 million samples. On a Titan X GPU and i7 CPU it solves a 1M samples dataset for 2000 iterations (with theta = 0.4) in about 4 days. 
 
 There is no limitation to the required RAM but an increase in sample size will increase the time of the solution in a linear way for the GPU part and in a super linear way (not exponentially though) for the CPU / Barnes hut part.
+
+## More info
+More detailed documentation can be found in the [Github Pages](https://georgedimitriadis.github.io/spikesorting_tsne/) of this repo.
