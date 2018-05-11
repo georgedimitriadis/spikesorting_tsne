@@ -20,12 +20,15 @@ To run the t-sne part of the code implemented in python you need the following p
 
 1. matplotlib
 2. numpy
-3. numba
-4. pyculib
+3. numba >= 0.37.0
+4. pyculib >= 1.0.2
+5. cython
 
 Numba and pyculib libraries have requirements of their own in how your system should be set up in regards to CUDA installation. You need to follow numba and pyculib documentation so that you are able to utilize the numba.cuda functions and the pyculib functions. This of course is OS dependent. Again, conda is your friend here.
 
 If you install the spikesorting\_tsne package from conda then all the above requirements will be also installed but not the extra requirements for numba.cuda (i.e. CUDA won't magically appear in your system). 
+
+The use of numpy and matplotlib is rather basic and should be fully forwards compatible. Things change with the numba and the pyculib packages every now and then in in ways that break backwards compatibility. If things break in the future reverting to the above mentioned versions should make things work again.
 
 ADVICE: 
 >First sort out your numba/CUDA/pyculib environment and then install any way you want the spikesorting\_tsne package!
