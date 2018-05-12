@@ -231,7 +231,7 @@ def calculate_knn_distances(samples_matrix, perplexity=100, verbose=True):
     :return: The num_of_neighbors nearest elements' indices and distances vectors
     :rtype: float32[m, k], float32[m, k]
     """
-    with sw.Stopwatch as outside_stopwatch:
+    with sw.Stopwatch() as outside_stopwatch:
         num_of_neighbours = perplexity * 3 + 1  # That is how the original t-sne defined k nearest neighbours
         m = samples_matrix.shape[0]  # number of samples in the samples x dimensions matrix
 

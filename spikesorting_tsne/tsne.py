@@ -88,8 +88,7 @@ def t_sne(samples, files_dir=None, exe_dir=None, num_dims=2, perplexity=100, the
     data = pylab.demean(samples, axis=0)
     data /= data.max()
     closest_indices_in_hd, closest_distances_in_hd = \
-        gpu.calculate_knn_distances(samples_matrix=data, perplexity=perplexity, mem_usage=0.9,
-                                    verbose=True)
+        gpu.calculate_knn_distances(samples_matrix=data, perplexity=perplexity, verbose=True)
 
     io.save_data_for_barneshut(files_dir, closest_distances_in_hd, closest_indices_in_hd, num_of_dims=num_dims,
                                perplexity=perplexity, theta=theta, eta=eta, exageration=exageration,
