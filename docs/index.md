@@ -39,6 +39,49 @@ To run the kilosort helper functions implemented in python you will also need:
 
 The C++ code does not have any requirements.
 
+## Use
+Example of use:
+```python
+import numpy as np
+from os import path
+from spikesorting_tsne import preprocessing_kilosort_results as preproc
+from spikesorting_tsne import tsne as TSNE
+from spikesorting_tsne import io_with_cpp as io
+from spikesorting_tsne import spike_positioning_on_probe as pos
+
+kilosort_folder = r'The folder where the kilosort output is'
+tsne_folder = r'The folder where the t-SNE results will go to'
+
+# Get the clusters from the kilosort folder
+spike_clusters = np.load(path.join(kilosort_folder, 'spike_clusters.npy'))
+# Get the information on which clusters are noise (the template_markings.npy is created by the spikesorting_tsne_guis GUIs)
+template_marking = np.load(path.join(kilosort_folder, 'template_marking.npy'))
+
+spikes_used = np.array([spike_index for spike_index in np.arange(len(spike_clusters)) if template_marking[spike_clusters[spike_index]] > 0])
+np.save(path.join(tsne_folder, 'indices_of_spikes_used.npy'), spikes_used)
+
+# Generate a spikes x templates matrix that can run in the t-SNE algorithm. The results are also saved as 'data_to_tsne_(#spikes, #templates).npy'
+template_features_sparse_clean = \
+    preproc.calculate_template_features_matrix_for_tsne(kilosort_folder, save_to_folder=tsne_folder,
+                                                        spikes_used_with_original_indexing=spikes_used)
+# If you need to later load the results
+template_features_sparse_clean = np.load(path.join(tsne_folder, 'data_to_tsne_(272886, 140).npy'))
+
+# Define the parameters and run the t-SNE
+exe_dir = r'The folder where the Barnes_Hut executable is' # This is optional. If the installation of the package was from conda you shouldn't need this
+theta = 0.4
+eta = 200.0
+num_dims = 2
+perplexity = 100
+iterations = 1000
+random_seed = 1
+verbose = 2
+tsne = TSNE.t_sne(samples=template_features_sparse_clean, files_dir=tsne_folder, exe_dir=exe_dir, num_dims=num_dims,
+                  perplexity=perplexity, theta=theta, eta=eta, iterations=iterations, random_seed=random_seed,
+                  verbose=verbose)
+
+tsne = io.load_tsne_result(tsne_folder)
+```
 
 ## Code Architecture
 The code is divided into two parts. One that is implemented in python and one in C++.
