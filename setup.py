@@ -1,7 +1,7 @@
 from setuptools import setup
 
 setup(name='spikesorting_tsne',
-      version='1.0.3',
+      version='1.0.0',
       description='T-sne with burnes hut and cuda extension (with python wrappers and python code for spike sorting)',
       long_description='This is the repository for the python part of the conda python package that allows running the results of automated spike sorting algorithms through the t-SNE algorithm obtaining a 2D or 3D embedding of the spikes. \
 						Although this package offers some functionality dedicated to spikesorting the t-SNE part of it is kept separate and can be run with any matrix of samples x features.\
