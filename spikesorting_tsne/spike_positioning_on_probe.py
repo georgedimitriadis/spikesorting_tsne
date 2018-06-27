@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import matplotlib.pyplot as plt
+from . import constants as ct
 
 
 def _get_relevant_channels_with_threshold(threshold, template):
@@ -67,8 +68,8 @@ def generate_probe_positions_of_spikes(base_folder, binary_data_filename, number
     active_channel_map = np.squeeze(channel_map, axis=1)
     channel_positions = np.load(os.path.join(base_folder, 'channel_positions.npy'))
 
-    spike_templates = np.load(os.path.join(base_folder, r'spike_templates.npy'))
-    templates = np.load(os.path.join(base_folder, r'templates.npy'))
+    spike_templates = np.load(os.path.join(base_folder, ct.SPIKE_TEMPLATES_FILENAME))
+    templates = np.load(os.path.join(base_folder, ct.TEMPLATES_FILENAME))
 
     data_raw = np.memmap(os.path.join(base_folder, binary_data_filename),
                          dtype=np.int16, mode='r')
@@ -76,7 +77,7 @@ def generate_probe_positions_of_spikes(base_folder, binary_data_filename, number
     number_of_timepoints_in_raw = int(data_raw.shape[0] / number_of_channels_in_binary_file)
     data_raw_kilosorted = np.reshape(data_raw, (number_of_channels_in_binary_file, number_of_timepoints_in_raw), order='F')
 
-    spike_times = np.squeeze(np.load(os.path.join(base_folder, 'spike_times.npy')).astype(np.int))
+    spike_times = np.squeeze(np.load(os.path.join(base_folder, ct.SPIKE_TIMES_FILENAME)).astype(np.int))
 
     time_points = 50
     if used_spikes_indices is None:
@@ -124,6 +125,8 @@ def generate_probe_positions_of_spikes(base_folder, binary_data_filename, number
     spike_distances_on_probe_sorted = np.array([b[1] for b in sorted(enumerate(spike_distance_on_probe),
                                                                      key=lambda dist: dist[1])])
 
+    np.save(os.path.join(base_folder, ct.WEIGHTED_SPIKE_POSITIONS_FILENAME), weighted_average_postions)
+
     return weighted_average_postions, spike_distance_on_probe, \
         spike_indices_sorted_by_probe_distance, spike_distances_on_probe_sorted
 
@@ -156,8 +159,8 @@ def generate_probe_positions_of_templates(base_folder, threshold=0.1):
     """
     # Load the required data from the kilosort folder
     channel_positions = np.load(os.path.join(base_folder, 'channel_positions.npy'))
-    templates = np.load(os.path.join(base_folder, r'templates.npy'))
-    template_markings = np.load(os.path.join(base_folder, r'template_marking.npy'))
+    templates = np.load(os.path.join(base_folder, ct.TEMPLATE_MARKING))
+    template_markings = np.load(os.path.join(base_folder, ct.TEMPLATE_MARKING_FILENAME))
     templates = templates[template_markings > 0, :, :]
 
     # Run the loop over all templates to get the positions
@@ -187,6 +190,10 @@ def generate_probe_positions_of_templates(base_folder, threshold=0.1):
         counter += 1
         if not (counter % 100):
             print('Completed ' + str(counter) + ' templates')
+
+    templates_positions = np.array(templates_positions)
+
+    np.save(os.path.join(base_folder, ct.WEIGHTED_TEMPLATE_POSITIONS_FILENAME), templates_positions)
 
     return np.array(templates_positions)
 

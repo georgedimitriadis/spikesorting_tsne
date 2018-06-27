@@ -105,12 +105,13 @@ def t_sne(samples, files_dir=None, exe_dir=None, num_dims=2, perplexity=100, the
     return tsne
 
 
-def t_sne_from_existing_distances(files_dir, exe_dir=None, num_dims=2, perplexity=100, theta=0.4, eta=200,
+def t_sne_from_existing_distances(files_dir, data_has_exageration=True,exe_dir=None, num_dims=2, theta=0.4, eta=200,
                                   exageration=12.0, iterations=1000, random_seed=-1, verbose=2):
     """
     Runs the t-SNE algorithm using a precalculated set of distances (saved in the data.dat file in the files_dir folder)
     This will extract the distances and indices from the data.dat file and will overwrite it with the new parameters
-    like num_dims, perplexity, etc..
+    like num_dims, iterations, etc.. Given that the number of the kept distances is defined by perplexity, this cannot
+    be reset but stays the same as used originally to calculate the high dimensional distances.
 
     :param files_dir: where the data.dat file is and where the t-SNE will save its result
     :type files_dir: string
@@ -118,8 +119,6 @@ def t_sne_from_existing_distances(files_dir, exe_dir=None, num_dims=2, perplexit
     :type exe_dir: string
     :param num_dims: how many dimensions should the t-sne embedding have (2 or 3)
     :type num_dims: int
-    :param perplexity: the number of closest spikes considered are 3 * perplexity
-    :type perplexity: int
     :param theta: the angle on the t-sne embedding inside of which all spikes are considered a single point (0 to 1)
     :type theta: float
     :param eta: the learning rate of the algorithm
@@ -138,7 +137,10 @@ def t_sne_from_existing_distances(files_dir, exe_dir=None, num_dims=2, perplexit
     :rtype: float32[:,num_of_dims]
     """
     closest_distances_in_hd, closest_indices_in_hd, parameters_dict = io.load_barneshut_data(files_dir,
-                                                                                             data_has_exageration=False)
+                                                                                             data_has_exageration=
+                                                                                             data_has_exageration)
+
+    perplexity = parameters_dict['perplexity']
 
     io.save_data_for_barneshut(files_dir, closest_distances_in_hd, closest_indices_in_hd, num_of_dims=num_dims,
                                perplexity=perplexity, theta=theta, eta=eta, exageration=exageration,

@@ -13,6 +13,7 @@ from os import path
 import pickle
 import pandas as pd
 from . import io_with_cpp as io
+from . import constants as ct
 
 
 def spike_indices_of_template(spike_templates, clean_templates=None, clean_template_index=None):
@@ -86,10 +87,10 @@ def get_template_marking(base_folder):
     :rtype: int[:]
     """
 
-    if path.isfile(path.join(base_folder, 'template_marking.npy')):
-        template_marking = np.load(path.join(base_folder, 'template_marking.npy'))
+    if path.isfile(path.join(base_folder, ct.TEMPLATE_MARKING_FILENAME)):
+        template_marking = np.load(path.join(base_folder, ct.TEMPLATE_MARKING_FILENAME))
     else:
-        templates = np.load(path.join(base_folder, 'templates.npy'))
+        templates = np.load(path.join(base_folder, ct.TEMPLATES_FILENAME))
         num_of_templates = templates.shape[2]
         template_marking = np.ones(num_of_templates)
         del templates
@@ -135,7 +136,7 @@ def find_spike_indices_for_representative_tsne(base_folder, save_to_folder, thre
 
     :rtype: int[:], dict, dict
     """
-    spike_templates = np.load(path.join(base_folder, 'spike_templates.npy'))
+    spike_templates = np.load(path.join(base_folder, ct.SPIKE_TEMPLATES_FILENAME))
     template_marking = get_template_marking(base_folder)
 
     clean_templates = np.argwhere(template_marking)
@@ -166,10 +167,12 @@ def find_spike_indices_for_representative_tsne(base_folder, save_to_folder, thre
         num_of_spikes_in_small_templates += spike_indices.size
 
     print('{} templates with more than {} spikes (total spikes in those = {}). \n{} templates with less '
-          'than {} spikes (total spikes in those = {})'.format(len(large_clean_templates_with_spike_indices),
-                                                               threshold, num_of_spikes_in_large_templates,
-                                                               len(small_clean_templates_with_spike_indices),
-                                                               threshold, num_of_spikes_in_small_templates))
+          'than {} spikes (total spikes in those = {}). \npercentage of spikes in the large templates = '
+          '{}%'.format(len(large_clean_templates_with_spike_indices),
+               threshold, num_of_spikes_in_large_templates,
+               len(small_clean_templates_with_spike_indices),
+               threshold, num_of_spikes_in_small_templates,
+               percentage_of_kept_spikes_in_large_templates * 100))
 
     spikes_chosen_flat = []
     for sublist in spikes_chosen:
@@ -185,12 +188,12 @@ def find_spike_indices_for_representative_tsne(base_folder, save_to_folder, thre
     large_clean_tempalates_indices = np.fromiter(large_clean_templates_with_spike_indices.keys(), int,
                                                  len(large_clean_templates_with_spike_indices))
     pickle.dump(small_clean_templates_with_spike_indices,
-                open(path.join(save_to_folder, "small_clean_templates_with_spike_indices.pkl"), "wb"))
+                open(path.join(save_to_folder, ct.SMALL_CLEAN_TEMPLATES_WITH_SPIKE_INDICES_PICKLE), "wb"))
     pickle.dump(large_clean_templates_with_spike_indices,
-                open(path.join(save_to_folder, "large_clean_templates_with_spike_indices.pkl"), "wb"))
-    np.save(path.join(save_to_folder, 'indices_of_spikes_used'), indices_of_spikes_used)
-    np.save(path.join(save_to_folder, 'indices_of_small_templates'), small_clean_templates_indices)
-    np.save(path.join(save_to_folder, 'indices_of_large_templates'), large_clean_tempalates_indices)
+                open(path.join(save_to_folder, ct.LARGE_CLEAN_TEMPLATES_WITH_SPIKE_INDICES_PICKLE), "wb"))
+    np.save(path.join(save_to_folder, ct.INDICES_OF_SPIKES_USED_FILENAME), indices_of_spikes_used)
+    np.save(path.join(save_to_folder, ct.INDICES_OF_SMALL_TEMPLATES_FILENAME), small_clean_templates_indices)
+    np.save(path.join(save_to_folder, ct.INDICES_OF_LARGE_TEMPLATES_FILENAME), large_clean_tempalates_indices)
 
     return indices_of_spikes_used, small_clean_templates_with_spike_indices, large_clean_templates_with_spike_indices
 
@@ -202,20 +205,24 @@ def calculate_template_features_matrix_for_tsne(base_folder, save_to_folder, spi
     the t-sne algorithm. Each sample represents a spike and each element the distance of this spike to a specific
     template.
 
-    :param base_folder:
-    :type base_folder:
-    :param save_to_folder:
-    :type save_to_folder:
-    :param spikes_used_with_original_indexing:
-    :type spikes_used_with_original_indexing:
-    :param spikes_used_with_clean_indexing:
-    :type spikes_used_with_clean_indexing:
-    :return:
-    :rtype:
+    :param base_folder: the folder where kilosort has saved its results
+    :type base_folder: string
+    :param save_to_folder: the folder to save the resulting .npy
+    :type save_to_folder: string
+    :param spikes_used_with_original_indexing: an array of indices to pick the spikes used. It uses the original spike
+    indexing (as givan by the kilosort results) before any cleaning
+
+    :type spikes_used_with_original_indexing: int[:]
+    :param spikes_used_with_clean_indexing: an array of indices to pick the spikes used. It uses the indexing after
+    removing all spikes that are marked as noise by the cleaning process
+
+    :type spikes_used_with_clean_indexing: int[:]
+    :return: the spikes x template distances matrix to be used by the T-sne algorithm
+    :rtype: float[:,:]
     """
-    spike_templates = np.load(path.join(base_folder, 'spike_templates.npy'))
-    template_features = np.load(path.join(base_folder, 'template_features.npy'))
-    template_features_ind = np.load(path.join(base_folder, 'template_feature_ind.npy'))
+    spike_templates = np.load(path.join(base_folder, ct.SPIKE_TEMPLATES_FILENAME))
+    template_features = np.load(path.join(base_folder, ct.TEMPLATE_FEATURES_FILENAME))
+    template_features_ind = np.load(path.join(base_folder, ct.TEMPLATE_FEATURES_INDEX_FILENAME))
 
     template_marking = get_template_marking(base_folder)
 
@@ -286,70 +293,66 @@ def generate_spike_info(kilosort_folder, tsne_folder, tsne_filename='result.dat'
 
     partial_tsne = False
 
-    if path.isfile(path.join(tsne_folder, 'indices_of_spikes_used.npy')):
-        spikes_used = np.load(path.join(tsne_folder, 'indices_of_spikes_used.npy'))
+    if path.isfile(path.join(tsne_folder, ct.INDICES_OF_SPIKES_USED_FILENAME )):
+        spikes_used = np.load(path.join(tsne_folder, ct.INDICES_OF_SPIKES_USED_FILENAME))
         partial_tsne = True
     else:
         spikes_used = np.arange(tsne.shape[0])
 
-    if path.isfile(path.join(tsne_folder, 'indices_of_small_templates.npy')) and partial_tsne:
-        indices_of_small_templates = np.load(path.join(tsne_folder, 'indices_of_small_templates.npy'))
+    if path.isfile(path.join(tsne_folder, ct.INDICES_OF_SMALL_TEMPLATES_FILENAME)) and partial_tsne:
+        indices_of_small_templates = np.load(path.join(tsne_folder, ct.INDICES_OF_SMALL_TEMPLATES_FILENAME))
     else:
         indices_of_small_templates = spikes_used
 
-    if path.isfile(path.join(tsne_folder, 'weighted_template_positions.npy')):
-        weighted_template_positions = np.load(path.join(tsne_folder, 'weighted_template_positions.npy'))
+    if path.isfile(path.join(tsne_folder, ct.WEIGHTED_TEMPLATE_POSITIONS_FILENAME)):
+        weighted_template_positions = np.load(path.join(tsne_folder, ct.WEIGHTED_TEMPLATE_POSITIONS_FILENAME))
     else:
         weighted_template_positions = None
 
-    if path.isfile(path.join(tsne_folder, 'weighted_spike_positions.npy')):
-        weighted_spike_positions = np.load(path.join(tsne_folder, 'weighted_spike_positions.npy'))
+    if path.isfile(path.join(tsne_folder, ct.WEIGHTED_SPIKE_POSITIONS_FILENAME)):
+        weighted_spike_positions = np.load(path.join(tsne_folder, ct.WEIGHTED_SPIKE_POSITIONS_FILENAME))
     else:
         weighted_spike_positions = None
 
-    if path.isfile(path.join(tsne_folder, 'template_marking.npy')):
-        template_marking = np.load(path.join(kilosort_folder, 'template_marking.npy'))
+    if path.isfile(path.join(kilosort_folder, ct.TEMPLATE_MARKING_FILENAME)):
+        template_marking = np.load(path.join(kilosort_folder, ct.TEMPLATE_MARKING_FILENAME))
     else:
         template_marking = np.ones(tsne.shape[0]) * 5 # Set it to Unspecified_1
 
-    spike_templates = np.load(path.join(kilosort_folder, 'spike_templates.npy'))[spikes_used]
-    spike_times = np.load(path.join(kilosort_folder, 'spike_times.npy'))[spikes_used]
+    spike_templates = np.load(path.join(kilosort_folder, ct.SPIKE_TEMPLATES_FILENAME))[spikes_used]
+    spike_times = np.load(path.join(kilosort_folder, ct.SPIKE_TIMES_FILENAME))[spikes_used]
 
-    types = {0: 'Noise', 1: 'SS', 2: 'SS_Contaminated', 3: 'SS_Putative', 4: 'MUA', 5: 'Unspesified_1',
-             6: 'Unspecified_2',
-             7: 'Unspecified_3'}
-
-    columns = ['original_index', 'times', 'template_after_cleaning', 'type_after_cleaning', 'template_after_sorting',
-               'type_after_sorting', 'template_with_all_spikes_present', 'tsne_x', 'tsne_y', 'probe_position_x',
-               'probe_position_z']
+    columns = [ct.ORIGINAL_INDEX, ct.TIMES, ct.TEMPLATE_AFTER_CLEANING, ct.TYPE_AFTER_CLEANING, ct.TEMPLATE_AFTER_SORTING,
+               ct.TYPE_AFTER_SORTING, ct.TEMPLATE_WITH_ALL_SPIKES_PRESENT, ct.TSNE_X, ct.TSNE_Y, ct.PROBE_POSITION_X,
+               ct.PROBE_POSITION_Y]
 
     spike_info = pd.DataFrame(index=np.arange(spikes_used.size), columns=columns)
 
-    spike_info['original_index'] = spikes_used
-    spike_info['times'] = spike_times
-    spike_info['template_after_cleaning'] = spike_templates
-    spike_info['type_after_cleaning'] = [types[int(template_marking[i])] for i in spike_templates]
-    spike_info['template_after_sorting'] = spike_info['template_after_cleaning']
-    spike_info['type_after_sorting'] = spike_info['type_after_cleaning']
+    spike_info[ct.ORIGINAL_INDEX] = spikes_used
+    spike_info[ct.TIMES] = spike_times
+    spike_info[ct.TEMPLATE_AFTER_CLEANING] = spike_templates
+    spike_info[ct.TYPE_AFTER_CLEANING] = [ct.types[int(template_marking[i])] for i in spike_templates]
+    spike_info[ct.TEMPLATE_AFTER_SORTING] = spike_info[ct.TEMPLATE_AFTER_CLEANING]
+    spike_info[ct.TYPE_AFTER_SORTING] = spike_info[ct.TYPE_AFTER_CLEANING]
     if partial_tsne:
-        spike_info['template_with_all_spikes_present'] = [bool(np.in1d(spike_template, indices_of_small_templates))
+        spike_info[ct.TEMPLATE_WITH_ALL_SPIKES_PRESENT] = [bool(np.in1d(spike_template, indices_of_small_templates))
                                                           for spike_template in spike_templates]
     else:
-        spike_info['template_with_all_spikes_present'] = [True for spike_template in spike_templates]
+        spike_info[ct.TEMPLATE_WITH_ALL_SPIKES_PRESENT] = [True for spike_template in spike_templates]
 
     if weighted_spike_positions is not None:
-        spike_info['probe_position_x'] = weighted_spike_positions[:, 0]
-        spike_info['probe_position_y'] = weighted_spike_positions[:, 1]
+        spike_info[ct.PROBE_POSITION_X] = weighted_spike_positions[:, 0]
+        spike_info[ct.PROBE_POSITION_Y] = weighted_spike_positions[:, 1]
 
     if weighted_spike_positions is None and weighted_template_positions is not None:
-        spike_info['probe_position_x'] = [weighted_template_positions[spike_template, 0]
+        spike_info[ct.PROBE_POSITION_X] = [weighted_template_positions[spike_template, 0]
                                           for spike_template in spike_templates]
-        spike_info['probe_position_y'] = [weighted_template_positions[spike_template, 1]
+        spike_info[ct.PROBE_POSITION_Y] = [weighted_template_positions[spike_template, 1]
                                           for spike_template in spike_templates]
 
-    spike_info['tsne_x'] = tsne[:, 0]
-    spike_info['tsne_y'] = tsne[:, 1]
+    spike_info[ct.TSNE_X] = tsne[:, 0]
+    spike_info[ct.TSNE_Y] = tsne[:, 1]
 
-    spike_info.to_pickle(path.join(tsne_folder, 'spike_info.df'))
+    spike_info.to_pickle(path.join(tsne_folder, ct.SPIKE_INFO_FILENAME))
 
     return spike_info
