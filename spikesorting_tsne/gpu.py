@@ -180,11 +180,11 @@ def _segment_sort_transposed_distances_get_knns(num_of_neighbours, distances_on_
 
             # Prepare for sorting in this iteration
             # 1. Get this iteration's keys (distances) onto the host from the gpu and reshape them appropriately
-            keys = np.ascontiguousarray(distances_on_gpu.copy_to_host()[:, p[i - 1]:p[i]].transpose().reshape(m * delta_n))
+            keys = np.ascontiguousarray(distances_on_gpu.copy_to_host()[:, p[i - 1]:p[i]].transpose().reshape(m * delta_n), dtype=np.float32)
             # 2. Create the values (indices) appropriately reshaped
-            values = np.ascontiguousarray(np.tile(np.arange(m), (delta_n, 1)).reshape(m * delta_n))
+            values = np.ascontiguousarray(np.tile(np.arange(m), (delta_n, 1)).reshape(m * delta_n), dtype=np.int32)
             # 3. Define the segments
-            segments = np.ascontiguousarray(np.arange(m, m * delta_n, m))
+            segments = np.ascontiguousarray(np.arange(m, m * delta_n, m), dtype=np.int32)
             # 4. Do the segmented sort
             sorting.segmented_sort(keys=keys, vals=values, segments=segments)
 
