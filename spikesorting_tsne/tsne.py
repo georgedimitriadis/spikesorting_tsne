@@ -6,6 +6,7 @@ import matplotlib.pylab as pylab
 from subprocess import Popen, PIPE
 import sys
 from os import path
+from platform import system
 
 
 def get_barnes_hut_executable(exe_dir=None):
@@ -24,7 +25,10 @@ def get_barnes_hut_executable(exe_dir=None):
             print('Cannot find Barnes_Hut.exe. Please provide a path to it yourself by setting the exe_dir parameter.')
             return
     else:
-        exe_file = path.join(exe_dir, 'Barnes_Hut.exe')
+        if system() == 'Windows':
+            exe_file = path.join(exe_dir, 'Barnes_Hut.exe')
+        else:
+            exe_file = path.join(exe_dir, 'Barnes_Hut.out')
 
     return exe_file
 
