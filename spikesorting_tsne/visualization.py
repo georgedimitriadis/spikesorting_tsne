@@ -103,7 +103,7 @@ def make_video_of_tsne_iterations(spike_info, iterations, video_dir, data_file_n
             ax.cla()
             tsne = io.load_tsne_result(video_dir, data_file_name.format(it))
             tsne = np.transpose(tsne)
-           spike_info[ct.TSNE_X] = tsne[0, :]
+            spike_info[ct.TSNE_X] = tsne[0, :]
             spike_info[ct.TSNE_Y] = tsne[1, :]
             plot_tsne_of_spikes(spike_info, cm=cm, subtitle=subtitle, label_name=label_name, label_array=cm_remapping,
                                 axes=ax, legent_on=legent_on, max_screen=max_screen, hide_ticklabels=True)
