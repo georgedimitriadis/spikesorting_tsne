@@ -2,6 +2,7 @@ import numpy as np
 import os
 import matplotlib.pyplot as plt
 from . import constants as ct
+import pandas as pd
 
 
 def _get_relevant_channels_with_threshold(threshold, template):
@@ -159,7 +160,7 @@ def generate_probe_positions_of_templates(base_folder, threshold=0.1):
     """
     # Load the required data from the kilosort folder
     channel_positions = np.load(os.path.join(base_folder, 'channel_positions.npy'))
-    templates = np.load(os.path.join(base_folder, ct.TEMPLATE_MARKING))
+    templates = np.load(os.path.join(base_folder, ct.TEMPLATES_FILENAME))
     template_markings = np.load(os.path.join(base_folder, ct.TEMPLATE_MARKING_FILENAME))
     templates = templates[template_markings > 0, :, :]
 
@@ -224,3 +225,63 @@ def view_spike_positions(spike_positions, brain_regions, probe_dimensions, label
         ax.plot([0, probe_dimensions[0]], [brain_regions[region], brain_regions[region]], 'k--', linewidth=2)
     return fig, ax
 
+
+def view_grouped_templates_positions(base_folder, brain_regions, probe_dimensions, position_multiplier=1,
+                                     labels_offset=80, font_size=20):
+    """
+
+    :param base_folder: the folder where all the npy arrays (template_markings etc.) are saved
+    :type base_folder: string
+    :param brain_regions: a dictionary with keys the names of the brain regions underneath the demarcating lines and
+    values the y position on the probe of the demarcating lines
+    :param probe_dimensions: the dimensions of the probe
+    :type probe_dimensions: np.array(2)
+    :type brain_regions: (dict{string: float})
+    :param position_multiplier: a number multiplying the positions so that the numbers are not the arbitrary ones from
+    the prb file but correspond to the length of the probe
+
+    :type position_multiplier: float
+    :param labels_offset: offset of the labels on the plot
+    :type labels_offset: (int)
+    :param font_size: the font size of the labels
+    :type font_size: (int)
+    :return:
+    """
+
+    template_markings = np.load(os.path.join(base_folder, ct.TEMPLATE_MARKING_FILENAME))
+
+    template_positions = np.squeeze(position_multiplier * np.load(os.path.join(base_folder, ct.TEMPLATE_POSITIONS_FILENAME)))
+
+    clean_template_markings = np.squeeze(template_markings[np.argwhere(template_markings > 0)])
+    types = np.flipud(np.unique(clean_template_markings))
+
+    fig = plt.figure()
+    ax = fig.add_axes([0.08, 0.05, 0.9, 0.9])
+
+    cm = plt.cm.cool
+
+    type_to_color = {1: (0, 61/255, 1, 1), 2: (27/255, 221/255, 206/255, 1), 3: (99/255, 214/255, 39/255, 1),
+                     4: (255/255, 183/255, 0/255, 1), 5: (100/255, 100/255, 100/255, 1),
+                     6: (170 / 255, 170 / 255, 170 / 255, 1), 7: (240/255, 240/255, 240/255, 1)}
+    type_to_size = {1: 60, 2: 50, 3: 40, 4: 40, 5: 40, 6: 40, 7: 40}
+
+    for type in types:
+        indices_of_templates_of_type = np.squeeze(np.argwhere(clean_template_markings == type))
+
+        positions_of_type = template_positions[indices_of_templates_of_type, :]
+        if len(positions_of_type.shape) == 1:
+            positions_of_type = np.expand_dims(positions_of_type, axis=0)
+        ax.scatter(positions_of_type[:, 0], positions_of_type[:, 1], s=type_to_size[type], c=type_to_color[type])
+
+
+    ax.set_xlim(0, probe_dimensions[0])
+    ax.set_ylim(0, probe_dimensions[1])
+    ax.yaxis.set_ticks(np.arange(0, probe_dimensions[1], 100))
+    ax.tick_params(axis='y', direction='in', length=5, width=1, colors='b')
+
+
+    for region in brain_regions:
+        ax.text(2, brain_regions[region] - labels_offset, region, fontsize=font_size)
+        ax.plot([0, probe_dimensions[0]], [brain_regions[region], brain_regions[region]], 'k--', linewidth=2)
+
+    return fig, ax

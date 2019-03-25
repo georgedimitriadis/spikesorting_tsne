@@ -109,7 +109,7 @@ def t_sne(samples, files_dir=None, exe_dir=None, num_dims=2, perplexity=100, the
     return tsne
 
 
-def t_sne_from_existing_distances(files_dir, data_has_exageration=True,exe_dir=None, num_dims=2, theta=0.4, eta=200,
+def t_sne_from_existing_distances(files_dir, data_has_exageration=True, exe_dir=None, num_dims=2, theta=0.4, eta=200,
                                   exageration=12.0, iterations=1000, random_seed=-1, verbose=2):
     """
     Runs the t-SNE algorithm using a precalculated set of distances (saved in the data.dat file in the files_dir folder)

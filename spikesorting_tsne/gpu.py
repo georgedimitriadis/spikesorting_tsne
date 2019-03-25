@@ -306,3 +306,65 @@ def calculate_knn_distances(samples_matrix, perplexity=100, verbose=True):
 
     return closest_indices, np.sqrt(np.abs(closest_distances))
 
+
+def calculate_knn_distances_for_two_small_matrices(samples_matrix_a, samples_matrix_b, perplexity=10, verbose=True):
+    """
+    Calculates the k (perplexity * 3 + 1) nearest neighbors of all row vectors (samples) in the sample_matrix_a with all
+    rows of the sample_matrix_b. It assumes that the matrices are small enough to fit into GPU memory and does no
+    memory checking. It returns the (perplexity * 3 + 1) distances of all the samples of the a matrix with the
+    (perplexity * 3 + 1) closest samples of the b matrix
+
+    :param samples_matrix_a: The full smaples x dimensions matrix a where every sample is a row in the matrix
+    :type samples_matrix_a: float32[m, n]
+    :param samples_matrix_b: The full smaples x dimensions matrix b where every sample is a row in the matrix
+    :type samples_matrix_b: float32[m, n]
+    :param perplexity: The definition of how many nearest neighbors to keep (k = perplexity * 3 + 1)
+    :type perplexity: int
+    :param verbose: If true the function prints out the time takes to complete the different parts of it
+    :type verbose: bool
+    :return: The num_of_neighbors nearest elements' indices and distances vectors
+    :rtype: float32[m, k], float32[m, k]
+    """
+    with sw.Stopwatch() as outside_stopwatch:
+        num_of_neighbours = perplexity * 3 + 1  # That is how the original t-sne defined k nearest neighbours
+        m = samples_matrix_a.shape[0]  # number of samples in the samples x dimensions matrix
+        n = samples_matrix_b.shape[0]
+
+        first_matrix = np.array(samples_matrix_a, dtype=np.float32)  # first matrix is the full samples matrix
+        second_matrix = np.array(samples_matrix_b, dtype=np.float32)
+
+        with sw.Stopwatch() as inside_stopwatch:
+            cuda.current_context().deallocations.clear()
+
+            if verbose:
+                print('LOADING UP THE GPU')
+            temp = np.array(np.zeros((m, second_matrix.shape[0]), dtype=np.float32))
+            distances_on_gpu = cuda.to_device(np.asfortranarray(temp))
+
+            if verbose:
+                print("Loading matrix time:  {0:.3f} s".format(inside_stopwatch.time_elapsed))
+
+            _calculate_distances_on_gpu(a=first_matrix, b=second_matrix, distances_on_gpu=distances_on_gpu,
+                                        verbose=verbose)
+
+            available_gpu_mem = _get_required_gpu_memory()
+
+            number_of_sorts = int(np.ceil((16 * n * m) / available_gpu_mem))  # 4 is the bytes per float32,
+            # 2 is the two arrays that need to be loaded to gpu, the other factor of 2 is probably a doubling
+            # overhead in the algorithm
+
+            if verbose:
+                print('     Number of sorting segments = ' + str(number_of_sorts + 1))
+
+            temp_indices, temp_distances = \
+                _segment_sort_transposed_distances_get_knns(num_of_neighbours=num_of_neighbours,
+                                                            distances_on_gpu=distances_on_gpu,
+                                                            number_of_sorts=number_of_sorts, verbose=verbose)
+
+            closest_indices = np.ascontiguousarray(temp_indices)
+            closest_distances = np.ascontiguousarray(temp_distances)
+
+        if verbose:
+            print("Spend Time: {0:.3f} s".format(outside_stopwatch.time_elapsed))
+
+    return closest_indices, np.sqrt(np.abs(closest_distances))

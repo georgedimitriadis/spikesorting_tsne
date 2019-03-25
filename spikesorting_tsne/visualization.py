@@ -1,6 +1,9 @@
 
 import matplotlib.pyplot as plt
-from . import constants as ct
+from . import constants as ct, io_with_cpp as io
+import numpy as np
+import os.path as path
+import matplotlib.animation as animation
 
 
 def plot_tsne_of_spikes(spike_info, cm=None, subtitle=None, label_name='Template', label_array=None,
@@ -77,12 +80,6 @@ def plot_tsne_of_spikes(spike_info, cm=None, subtitle=None, label_name='Template
         pass
 
 
-
-
-
-
-
-
 def make_video_of_tsne_iterations(spike_info, iterations, video_dir, data_file_name='interim_{:0>6}.dat',
                                   video_file_name='tsne_video.mp4', figsize=(15, 15), dpi=200, fps=30,
                                   movie_metadata=None, cm=None, subtitle=None,label_name='Label',
@@ -98,14 +95,14 @@ def make_video_of_tsne_iterations(spike_info, iterations, video_dir, data_file_n
     fig = plt.figure(figsize=figsize, dpi=dpi)
     ax = fig.add_subplot(111)
     fig.tight_layout()
-    with writer.saving(fig, join(video_dir, video_file_name), dpi):
+    with writer.saving(fig, path.join(video_dir, video_file_name), dpi):
         for it in iters:
             ax.cla()
             tsne = io.load_tsne_result(video_dir, data_file_name.format(it))
             tsne = np.transpose(tsne)
             spike_info[ct.TSNE_X] = tsne[0, :]
             spike_info[ct.TSNE_Y] = tsne[1, :]
-            plot_tsne_of_spikes(spike_info, cm=cm, subtitle=subtitle, label_name=label_name, label_array=cm_remapping,
+            plot_tsne_of_spikes(spike_info, cm=cm, subtitle=subtitle, label_name=label_name,
                                 axes=ax, legent_on=legent_on, max_screen=max_screen, hide_ticklabels=True)
             min_x = np.min(tsne[0, :])
             max_x = np.max(tsne[0, :])
