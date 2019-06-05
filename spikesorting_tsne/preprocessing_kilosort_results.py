@@ -204,7 +204,7 @@ def find_spike_indices_for_representative_tsne(base_folder, save_to_folder, thre
     return indices_of_spikes_used, small_clean_templates_with_spike_indices, large_clean_templates_with_spike_indices
 
 
-def calculate_template_features_matrix_for_tsne(base_folder, save_to_folder, spikes_used_with_original_indexing=None,
+def calculate_template_features_matrix_for_tsne(base_folder, save_to_folder,spikes_used_with_original_indexing=None,
                                                 spikes_used_with_clean_indexing=None):
     """
     Using the kilosort results, this function creates a matrix of samples x elements that can be used as an input to
@@ -624,7 +624,11 @@ def generate_template_info_after_cleaning(kilosort_folder, sampling_freq):
 
         if type > 0:
             spikes_in_template = np.squeeze(np.argwhere(templates_of_spikes == template_index))
-            number = len(spikes_in_template)
+            try:
+                number = len(spikes_in_template)
+            except TypeError:
+                number = 1
+
             rate = number / total_time
 
             template_info = template_info.append({'template number': template_index,
@@ -642,6 +646,16 @@ def generate_template_info_after_cleaning(kilosort_folder, sampling_freq):
 
 
 def generate_template_info_from_spike_info(spike_info, kilosort_folder, sampling_freq):
+    '''
+    Use this function to generate a template_info.df from a spike_info.df. This can be used once a new spike_info (that
+    includes manual sorting information from t-sne) is generated and new templates have been defined and spikes have
+    been rearranged
+
+    :param spike_info: The spike_info dataframe to turn into a template_info
+    :param kilosort_folder: The folder where the kilosort information is (where the result also will be saved)
+    :param sampling_freq: The sampling frequency of the raw data
+    :return: The template_info dataframe
+    '''
 
     clean_templates = np.unique(spike_info[ct.TEMPLATE_AFTER_SORTING].values)
     spike_times = spike_info[ct.TIMES].max()
